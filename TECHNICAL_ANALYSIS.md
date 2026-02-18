@@ -247,9 +247,10 @@ React Strict Mode enabled for development checks.
    - Provide text alternative for screen readers
    - Add `prefers-reduced-motion` support:
    ```tsx
-   const prefersReducedMotion = window.matchMedia(
-     '(prefers-reduced-motion: reduce)'
-   ).matches;
+   const prefersReducedMotion =
+     typeof window !== 'undefined'
+       ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
+       : false;
    ```
 
 6. **Error Boundaries**
