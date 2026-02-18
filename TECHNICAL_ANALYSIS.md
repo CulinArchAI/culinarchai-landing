@@ -205,13 +205,15 @@ React Strict Mode enabled for development checks.
 
 1. **Add Root Layout** (`app/layout.tsx`)
    ```tsx
+   import type { ReactNode } from 'react';
+   
    export const metadata = {
      title: 'CulinArch.AI - A New Language of Taste',
      description: 'A system. A structure. A new language of taste.',
      keywords: ['culinary', 'AI', 'architecture', 'taste'],
    };
    
-   export default function RootLayout({ children }) {
+   export default function RootLayout({ children }: { children: ReactNode }) {
      return (
        <html lang="en">
          <body>{children}</body>
