@@ -1,0 +1,2 @@
+open(".env", "w").close()
+open(".gitignore", "w").close()
