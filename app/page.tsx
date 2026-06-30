@@ -1,113 +1,343 @@
-
 "use client";
-import { useEffect, useRef } from "react";
 
-const BIN = `01000001 00100000 01110011 01111001 01110011 01110100 01100101 01101101 00101110 00100000 01000001 00100000 01110011 01110100 01110010 01110101 01100011 01110100 01110101 01110010 01100101 00101110 00100000 01000001 00100000 01101110 01100101 01110111 00100000 01101100 01100001 01101110 01100111 01110101 01100001 01100111 01100101 00100000 01101111 01100110 00100000 01110100 01100001 01110011 01110100 01100101 00101110 00100000 01010111 01100101 00100111 01110010 01100101 00100000 01101110 01101111 01110100 00100000 01101000 01100101 01110010 01100101 00100000 01110100 01101111 00100000 01110011 01101000 01100001 01110010 01100101 00100000 01110010 01100101 01100011 01101001 01110000 01100101 01110011 00101110`;
+import { useEffect, useRef, useState } from "react";
 
-type Dot = { x:number; y:number; vy:number; txt:"0"|"1"; stuck?:boolean; tx?:number; ty?:number; };
+const SYSTEMS = [
+  {
+    id: "arcos",
+    label: "ArcOS",
+    title: "Operational architecture",
+    copy: "A structured operating layer for culinary systems, standards and execution.",
+  },
+  {
+    id: "intelligence",
+    label: "Culinary Intelligence",
+    title: "Data into decisions",
+    copy: "Culinary information translated into usable patterns, logic and action.",
+  },
+  {
+    id: "archaeology",
+    label: "Culinary Archaeology",
+    title: "Origins and evolution",
+    copy: "A research layer for tracing ingredients, techniques and culinary lineage.",
+  },
+  {
+    id: "archsense",
+    label: "ArchSense",
+    title: "Perception and context",
+    copy: "A sensory intelligence layer connecting preference, environment and intent.",
+  },
+] as const;
 
-export default function Home(){
-  const ref = useRef<HTMLCanvasElement|null>(null);
+type Node = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  alpha: number;
+};
 
-  useEffect(()=>{
-    const canvas = ref.current!;
-    const ctx = canvas.getContext("2d")!;
+type Pointer = {
+  x: number;
+  y: number;
+  tx: number;
+  ty: number;
+  active: boolean;
+};
 
-    let w = (canvas.width = window.innerWidth);
-    let h = (canvas.height = window.innerHeight);
-    const DPR = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = w * DPR; canvas.height = h * DPR; ctx.scale(DPR, DPR);
+export default function Home() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const activeSystemRef = useRef(0);
+  const [activeSystem, setActiveSystem] = useState(0);
 
-    const cell = 10, cols = Math.ceil(w/cell), rows = Math.ceil(h/cell);
-    const ground:boolean[][] = Array.from({length:rows}, ()=>Array(cols).fill(false));
-    const dots: Dot[] = [];
-    let t=0, phase:"RAIN"|"GATHER"|"MORPH"="RAIN";
+  const activateSystem = (index: number) => {
+    activeSystemRef.current = index;
+    setActiveSystem(index);
+  };
 
-    const rnd=(a:number,b:number)=>a+Math.random()*(b-a);
-    const isSolid=(x:number,y:number)=>{
-      const c=Math.floor(x/cell), r=Math.floor(y/cell);
-      return r>=rows-1 || (r>=0&&r<rows&&c>=0&&c<cols&&ground[r+1]?.[c]);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const pointer: Pointer = {
+      x: window.innerWidth * 0.72,
+      y: window.innerHeight * 0.48,
+      tx: window.innerWidth * 0.72,
+      ty: window.innerHeight * 0.48,
+      active: false,
     };
-    const setCell=(x:number,y:number,val:boolean)=>{
-      const c=Math.floor(x/cell), r=Math.floor(y/cell);
-      if(r>=0&&r<rows&&c>=0&&c<cols) ground[r][c]=val;
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+    let frameId = 0;
+    const start = performance.now();
+    let nodes: Node[] = [];
+
+    const resize = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const count = width < 760 ? 34 : Math.min(82, Math.floor((width * height) / 22000));
+      nodes = Array.from({ length: count }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.16,
+        vy: (Math.random() - 0.5) * 0.16,
+        size: 0.7 + Math.random() * 1.2,
+        alpha: 0.18 + Math.random() * 0.42,
+      }));
     };
 
-    const targets:{x:number;y:number}[]=[];
-    function rasterize(){
-      const off=document.createElement("canvas"); const o=off.getContext("2d")!;
-      const pad=40; off.width=Math.min(1200,w-pad*2); off.height=240;
-      o.fillStyle="#000"; o.fillRect(0,0,off.width,off.height);
-      o.fillStyle="#fff"; const fs=Math.max(64,Math.min(180,Math.floor(w*0.12)));
-      o.font=`800 ${fs}px ui-sans-serif,system-ui,Inter,Arial`; o.textAlign="center"; o.textBaseline="middle";
-      o.fillText("CulinArch.AI", off.width/2, off.height/2);
-      const img=o.getImageData(0,0,off.width,off.height).data; const step=8;
-      const left=(w-off.width)/2, top=(h-off.height)/2; targets.length=0;
-      for(let y=0;y<off.height;y+=step){
-        for(let x=0;x<off.width;x+=step){
-          const a=(y*off.width+x)*4+3; if(img[a]>10) targets.push({x:left+x,y:top+y});
+    const onPointerMove = (event: PointerEvent) => {
+      pointer.tx = event.clientX;
+      pointer.ty = event.clientY;
+      pointer.active = true;
+    };
+
+    const onPointerLeave = () => {
+      pointer.active = false;
+      pointer.tx = width * 0.72;
+      pointer.ty = height * 0.48;
+    };
+
+    const draw = (now: number) => {
+      const elapsed = reduceMotion ? 0 : (now - start) * 0.00042;
+      pointer.x += (pointer.tx - pointer.x) * 0.08;
+      pointer.y += (pointer.ty - pointer.y) * 0.08;
+
+      ctx.clearRect(0, 0, width, height);
+
+      const gradient = ctx.createRadialGradient(
+        width * 0.74,
+        height * 0.45,
+        0,
+        width * 0.74,
+        height * 0.45,
+        Math.max(width, height) * 0.62,
+      );
+      gradient.addColorStop(0, "rgba(86, 113, 118, 0.12)");
+      gradient.addColorStop(0.45, "rgba(25, 32, 35, 0.04)");
+      gradient.addColorStop(1, "rgba(5, 7, 8, 0)");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+
+      for (const node of nodes) {
+        if (!reduceMotion) {
+          node.x += node.vx;
+          node.y += node.vy;
+        }
+
+        if (node.x < -10) node.x = width + 10;
+        if (node.x > width + 10) node.x = -10;
+        if (node.y < -10) node.y = height + 10;
+        if (node.y > height + 10) node.y = -10;
+
+        const mouseDistance = Math.hypot(node.x - pointer.x, node.y - pointer.y);
+        if (pointer.active && mouseDistance < 180) {
+          ctx.beginPath();
+          ctx.moveTo(node.x, node.y);
+          ctx.lineTo(pointer.x, pointer.y);
+          ctx.strokeStyle = `rgba(166, 203, 201, ${0.16 * (1 - mouseDistance / 180)})`;
+          ctx.lineWidth = 0.7;
+          ctx.stroke();
+        }
+
+        ctx.beginPath();
+        ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(187, 207, 205, ${node.alpha})`;
+        ctx.fill();
+      }
+
+      const networkDistance = width < 760 ? 86 : 112;
+      for (let i = 0; i < nodes.length; i += 1) {
+        for (let j = i + 1; j < nodes.length; j += 1) {
+          const a = nodes[i];
+          const b = nodes[j];
+          const distance = Math.hypot(a.x - b.x, a.y - b.y);
+          if (distance > networkDistance) continue;
+
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = `rgba(137, 159, 158, ${0.035 * (1 - distance / networkDistance)})`;
+          ctx.lineWidth = 0.55;
+          ctx.stroke();
         }
       }
-    }
-    rasterize();
 
-    function spawn(n=Math.max(40,Math.min(140,Math.floor(w/8)))){
-      for(let i=0;i<n;i++){
-        dots.push({ x:rnd(0,w), y:rnd(-h*0.25,0), vy:rnd(1.2,3.2), txt: Math.random()>0.5?"1":"0" });
+      const helixCenterX = width < 760 ? width * 0.66 : width * 0.76;
+      const helixTop = height * 0.12;
+      const helixHeight = height * 0.74;
+      const radius = Math.min(width < 760 ? 58 : 118, width * 0.1);
+      const segments = width < 760 ? 58 : 84;
+      const strandA: Array<{ x: number; y: number; depth: number }> = [];
+      const strandB: Array<{ x: number; y: number; depth: number }> = [];
+
+      for (let i = 0; i <= segments; i += 1) {
+        const progress = i / segments;
+        const y = helixTop + progress * helixHeight;
+        const angle = progress * Math.PI * 5.4 + elapsed;
+        const perspective = 0.76 + Math.sin(progress * Math.PI) * 0.24;
+        const wave = Math.sin(angle) * radius * perspective;
+        const depth = (Math.cos(angle) + 1) / 2;
+        strandA.push({ x: helixCenterX + wave, y, depth });
+        strandB.push({ x: helixCenterX - wave, y, depth: 1 - depth });
       }
-    }
-    function assignTargets(){
-      while(targets.length<dots.length) targets.push(targets[Math.floor(Math.random()*targets.length)]);
-      const shuffled=[...targets].sort(()=>Math.random()-0.5);
-      dots.forEach((d,i)=>{ d.tx=shuffled[i].x; d.ty=shuffled[i].y; d.stuck=false; });
-    }
-    const human = BIN.split(" ").map(b=>String.fromCharCode(parseInt(b,2))).join("");
 
-    function frame(){
-      t++; ctx.clearRect(0,0,w,h);
-      ctx.fillStyle="#0b0d0f"; ctx.fillRect(0,0,w,h);
-
-      // grid
-      ctx.strokeStyle="rgba(255,255,255,.04)"; ctx.lineWidth=1;
-      for(let x=0;x<w;x+=24){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
-      for(let y=0;y<h;y+=24){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
-
-      if(phase==="RAIN") spawn();
-
-      ctx.fillStyle="#8ae9ff"; ctx.font="12px ui-monospace, Menlo, Consolas"; ctx.textAlign="center"; ctx.textBaseline="middle";
-      let settled=0;
-      dots.forEach(d=>{
-        if(phase==="RAIN"){
-          if(!d.stuck){ d.y+=d.vy; if(isSolid(d.x,d.y)){ d.stuck=true; setCell(d.x,d.y,true);} }
-          else settled++;
-        } else {
-          if(d.tx==null||d.ty==null) return;
-          const dx=d.tx-d.x, dy=d.ty-d.y, dist=Math.hypot(dx,dy)||1;
-          const speed = phase==="GATHER" ? 0.12 : 0.2;
-          d.x += dx*speed; d.y += dy*speed;
-          if(dist<1.2){ d.x=d.tx; d.y=d.ty; }
+      const drawStrand = (strand: Array<{ x: number; y: number; depth: number }>) => {
+        for (let i = 1; i < strand.length; i += 1) {
+          const previous = strand[i - 1];
+          const current = strand[i];
+          ctx.beginPath();
+          ctx.moveTo(previous.x, previous.y);
+          ctx.lineTo(current.x, current.y);
+          ctx.strokeStyle = `rgba(188, 211, 207, ${0.13 + current.depth * 0.34})`;
+          ctx.lineWidth = 0.65 + current.depth * 0.9;
+          ctx.stroke();
         }
-        ctx.save(); ctx.shadowColor="rgba(128,245,255,.7)"; ctx.shadowBlur = phase==="RAIN"?6:12;
-        ctx.fillText(d.txt, d.x, d.y); ctx.restore();
+      };
+
+      drawStrand(strandA);
+      drawStrand(strandB);
+
+      for (let i = 3; i < strandA.length; i += 5) {
+        const a = strandA[i];
+        const b = strandB[i];
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.strokeStyle = "rgba(143, 171, 168, 0.11)";
+        ctx.lineWidth = 0.6;
+        ctx.stroke();
+      }
+
+      const anchorPositions = [0.18, 0.39, 0.61, 0.82];
+      anchorPositions.forEach((position, anchorIndex) => {
+        const point = strandA[Math.round(position * (strandA.length - 1))];
+        const pulse = reduceMotion ? 1 : 1 + Math.sin(now * 0.0018 + anchorIndex) * 0.22;
+
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 3.2 * pulse, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(199, 222, 217, 0.86)";
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, anchorIndex === activeSystemRef.current ? 14 * pulse : 9 * pulse, 0, Math.PI * 2);
+        ctx.strokeStyle =
+          anchorIndex === activeSystemRef.current
+            ? "rgba(185, 215, 210, 0.32)"
+            : "rgba(155, 191, 186, 0.13)";
+        ctx.lineWidth = anchorIndex === activeSystemRef.current ? 1 : 0.8;
+        ctx.stroke();
+
+        if (pointer.active) {
+          const distance = Math.hypot(pointer.x - point.x, pointer.y - point.y);
+          if (distance < 240) {
+            ctx.beginPath();
+            ctx.moveTo(pointer.x, pointer.y);
+            ctx.quadraticCurveTo(
+              (pointer.x + point.x) / 2,
+              Math.min(pointer.y, point.y) - 36,
+              point.x,
+              point.y,
+            );
+            ctx.strokeStyle = `rgba(174, 210, 205, ${0.3 * (1 - distance / 240)})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
       });
 
-      ctx.fillStyle="rgba(200,208,216,.75)"; ctx.font="13px ui-monospace, Menlo, Consolas";
-      ctx.textAlign="left"; ctx.fillText(human, 18, h-20);
+      frameId = requestAnimationFrame(draw);
+    };
 
-      if(phase==="RAIN" && (t>220 || settled>400)){ phase="GATHER"; assignTargets(); }
-      else if(phase==="GATHER" && t%90===0){ phase="MORPH"; }
+    resize();
+    window.addEventListener("resize", resize);
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    document.documentElement.addEventListener("pointerleave", onPointerLeave);
+    frameId = requestAnimationFrame(draw);
 
-      requestAnimationFrame(frame);
-    }
-    frame();
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("pointermove", onPointerMove);
+      document.documentElement.removeEventListener("pointerleave", onPointerLeave);
+    };
+  }, []);
 
-    const onResize=()=>{ w=window.innerWidth; h=window.innerHeight; canvas.width=w*DPR; canvas.height=h*DPR; ctx.scale(DPR,DPR); rasterize(); };
-    window.addEventListener("resize", onResize);
-    return ()=> window.removeEventListener("resize", onResize);
-  },[]);
+  const selected = SYSTEMS[activeSystem];
 
-  return <div style={{height:"100dvh",background:"#0b0d0f"}}>
-    <canvas ref={ref} style={{display:"block",width:"100%",height:"100%"}}/>
-    <style jsx global>{`::selection { background:#1f2933; color:#8ae9ff; }`}</style>
-  </div>;
+  return (
+    <main className="site-shell">
+      <canvas ref={canvasRef} className="network-canvas" aria-hidden="true" />
+      <div className="ambient-grid" aria-hidden="true" />
+
+      <header className="site-header">
+        <a className="brand" href="#top" aria-label="CulinArch.AI home">
+          <span>CulinArch</span>
+          <strong>.AI</strong>
+        </a>
+        <div className="header-status">
+          <span className="status-dot" />
+          Culinary intelligence architecture
+        </div>
+      </header>
+
+      <section id="top" className="hero">
+        <div className="hero-copy">
+          <p className="eyebrow">Structured culinary intelligence</p>
+          <h1>
+            A system.
+            <br />
+            A structure.
+            <br />
+            <span>A new language of taste.</span>
+          </h1>
+          <p className="intro">
+            CulinArch.AI is an evolving architecture for culinary knowledge, operations and intelligent decision-making.
+          </p>
+
+          <div className="system-panel" aria-live="polite">
+            <p className="panel-index">0{activeSystem + 1} / 04</p>
+            <h2>{selected.title}</h2>
+            <p>{selected.copy}</p>
+          </div>
+        </div>
+
+        <nav className="system-nav" aria-label="CulinArch.AI systems">
+          {SYSTEMS.map((system, index) => (
+            <button
+              key={system.id}
+              type="button"
+              className={index === activeSystem ? "system-link is-active" : "system-link"}
+              onMouseEnter={() => activateSystem(index)}
+              onFocus={() => activateSystem(index)}
+              onClick={() => activateSystem(index)}
+              aria-pressed={index === activeSystem}
+            >
+              <span>0{index + 1}</span>
+              {system.label}
+            </button>
+          ))}
+        </nav>
+      </section>
+
+      <footer className="site-footer">
+        <span>Not a recipe platform.</span>
+        <span>Architecture in progress.</span>
+      </footer>
+    </main>
+  );
 }
