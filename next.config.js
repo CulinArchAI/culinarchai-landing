@@ -9,33 +9,39 @@ const securityHeaders = [
     value: "DENY",
   },
   {
-    key: "X-XSS-Protection",
-    value: "1; mode=block",
-  },
-  {
     key: "Referrer-Policy",
     value: "strict-origin-when-cross-origin",
   },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=()",
+    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  },
+  {
+    key: "Cross-Origin-Opener-Policy",
+    value: "same-origin",
   },
   {
     key: "Content-Security-Policy",
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+      "base-uri 'self'",
+      "form-action 'self' mailto:",
+      "frame-ancestors 'none'",
+      "object-src 'none'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
-      "font-src 'self'",
+      "font-src 'self' data:",
       "connect-src 'self'",
-      "frame-ancestors 'none'",
+      "worker-src 'self' blob:",
+      "upgrade-insecure-requests",
     ].join("; "),
   },
 ];
 
 const nextConfig = {
   reactStrictMode: true,
+  poweredByHeader: false,
   async headers() {
     return [
       {
@@ -46,4 +52,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
