@@ -1,5 +1,5 @@
-import { HeroCanvas } from "@/components/hero-canvas";
-import { SiteHeader } from "@/components/site-header";
+import { HeroCanvas } from "../components/hero-canvas";
+import { SiteHeader } from "../components/site-header";
 
 const architectureAreas = [
   {
