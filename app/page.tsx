@@ -1,113 +1,382 @@
+import { HeroCanvas } from "@/components/hero-canvas";
+import { SiteHeader } from "@/components/site-header";
 
-"use client";
-import { useEffect, useRef } from "react";
+const architectureAreas = [
+  {
+    code: "01",
+    name: "ArcOS",
+    type: "System foundation",
+    status: "Working architecture",
+    description:
+      "The structural layer for vocabularies, records, relationships, workflows, and governance across the platform.",
+  },
+  {
+    code: "02",
+    name: "Culinary Intelligence",
+    type: "Analytical capability",
+    status: "In development",
+    description:
+      "A family of systems for interpreting ingredients, techniques, recipes, sensory relationships, and professional culinary decisions.",
+  },
+  {
+    code: "03",
+    name: "Culinary Archaeology",
+    type: "Research domain",
+    status: "Active research",
+    description:
+      "Historical and cultural research into how dishes, techniques, ingredients, and culinary ideas evolve across time and place.",
+  },
+  {
+    code: "04",
+    name: "ArchSense",
+    type: "Sensory research",
+    status: "Exploratory",
+    description:
+      "A developing sensory language for describing how taste, aroma, texture, contrast, and substitution behave as structured relationships.",
+  },
+];
 
-const BIN = `01000001 00100000 01110011 01111001 01110011 01110100 01100101 01101101 00101110 00100000 01000001 00100000 01110011 01110100 01110010 01110101 01100011 01110100 01110101 01110010 01100101 00101110 00100000 01000001 00100000 01101110 01100101 01110111 00100000 01101100 01100001 01101110 01100111 01110101 01100001 01100111 01100101 00100000 01101111 01100110 00100000 01110100 01100001 01110011 01110100 01100101 00101110 00100000 01010111 01100101 00100111 01110010 01100101 00100000 01101110 01101111 01110100 00100000 01101000 01100101 01110010 01100101 00100000 01110100 01101111 00100000 01110011 01101000 01100001 01110010 01100101 00100000 01110010 01100101 01100011 01101001 01110000 01100101 01110011 00101110`;
+const researchThemes = [
+  {
+    kind: "Research note",
+    title: "Culinary knowledge as structured intelligence",
+    summary:
+      "A framework for moving beyond isolated recipe records toward connected culinary meaning.",
+    state: "In preparation",
+  },
+  {
+    kind: "Method note",
+    title: "From ingredients to technique relationships",
+    summary:
+      "How provenance, transformation, and professional context can shape a richer culinary record.",
+    state: "In preparation",
+  },
+  {
+    kind: "Research direction",
+    title: "Toward a computational language of sensory contrast",
+    summary:
+      "An early exploration of vocabulary, confidence, and validation for sensory intelligence.",
+    state: "Exploratory",
+  },
+];
 
-type Dot = { x:number; y:number; vy:number; txt:"0"|"1"; stuck?:boolean; tx?:number; ty?:number; };
+const roadmap = [
+  {
+    label: "Now",
+    title: "Define the architecture",
+    items: [
+      "Validate the four-area model",
+      "Establish public research standards",
+      "Build the first evidence-led website layer",
+    ],
+  },
+  {
+    label: "Next",
+    title: "Publish working knowledge",
+    items: [
+      "Release foundational research notes",
+      "Introduce sample structured records",
+      "Test one public capability with expert users",
+    ],
+  },
+  {
+    label: "Later",
+    title: "Open the platform carefully",
+    items: [
+      "Knowledge and dataset exploration",
+      "Authenticated professional workspaces",
+      "Documented integration boundaries",
+    ],
+  },
+];
 
-export default function Home(){
-  const ref = useRef<HTMLCanvasElement|null>(null);
+function StatusPill({ children }: { children: React.ReactNode }) {
+  return <span className="status-pill">{children}</span>;
+}
 
-  useEffect(()=>{
-    const canvas = ref.current!;
-    const ctx = canvas.getContext("2d")!;
+export default function HomePage() {
+  return (
+    <>
+      <SiteHeader />
+      <main id="main-content">
+        <section className="hero" id="top" aria-labelledby="hero-title">
+          <div className="site-shell hero-grid">
+            <div className="hero-copy">
+              <p className="eyebrow">Culinary intelligence architecture</p>
+              <h1 id="hero-title">
+                A system. A structure. <em>A new language of taste.</em>
+              </h1>
+              <p className="hero-summary">
+                CulinArchAI is a research-led platform for structuring culinary
+                knowledge, ingredients, techniques, culture, sensory relationships,
+                and professional decision-making.
+              </p>
+              <div className="hero-actions" aria-label="Hero actions">
+                <a className="button button-primary" href="#architecture">
+                  Explore the architecture
+                </a>
+                <a className="button button-quiet" href="#research">
+                  View research direction
+                </a>
+              </div>
+              <dl className="hero-metadata" aria-label="Platform status">
+                <div>
+                  <dt>Current phase</dt>
+                  <dd>Research &amp; architecture</dd>
+                </div>
+                <div>
+                  <dt>Public posture</dt>
+                  <dd>Evidence before claims</dd>
+                </div>
+              </dl>
+            </div>
+            <HeroCanvas />
+          </div>
+        </section>
 
-    let w = (canvas.width = window.innerWidth);
-    let h = (canvas.height = window.innerHeight);
-    const DPR = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = w * DPR; canvas.height = h * DPR; ctx.scale(DPR, DPR);
+        <section className="principle-band" aria-label="Core principle">
+          <div className="site-shell principle-band-inner">
+            <p>Not a recipe archive.</p>
+            <p>Not an AI wrapper.</p>
+            <p>A structured culinary intelligence system.</p>
+          </div>
+        </section>
 
-    const cell = 10, cols = Math.ceil(w/cell), rows = Math.ceil(h/cell);
-    const ground:boolean[][] = Array.from({length:rows}, ()=>Array(cols).fill(false));
-    const dots: Dot[] = [];
-    let t=0, phase:"RAIN"|"GATHER"|"MORPH"="RAIN";
+        <section className="section problem-section" id="platform" aria-labelledby="problem-title">
+          <div className="site-shell split-layout">
+            <div>
+              <p className="eyebrow">The problem</p>
+              <h2 id="problem-title">Culinary knowledge is vast. Its structure is fragmented.</h2>
+            </div>
+            <div className="prose-stack">
+              <p>
+                Recipes preserve outcomes, but they rarely capture the full structure
+                behind them: technique, transformation, provenance, sensory intent,
+                operational context, and cultural lineage.
+              </p>
+              <p>
+                CulinArchAI is being built to connect those layers without reducing
+                cuisine to a list of ingredients or treating AI as an authority above
+                culinary craft.
+              </p>
+            </div>
+          </div>
 
-    const rnd=(a:number,b:number)=>a+Math.random()*(b-a);
-    const isSolid=(x:number,y:number)=>{
-      const c=Math.floor(x/cell), r=Math.floor(y/cell);
-      return r>=rows-1 || (r>=0&&r<rows&&c>=0&&c<cols&&ground[r+1]?.[c]);
-    };
-    const setCell=(x:number,y:number,val:boolean)=>{
-      const c=Math.floor(x/cell), r=Math.floor(y/cell);
-      if(r>=0&&r<rows&&c>=0&&c<cols) ground[r][c]=val;
-    };
+          <div className="site-shell signal-grid" aria-label="Knowledge gaps">
+            <article>
+              <span className="signal-index">01</span>
+              <h3>Records without relationships</h3>
+              <p>Large collections become useful only when entities, sources, and transformations can be connected.</p>
+            </article>
+            <article>
+              <span className="signal-index">02</span>
+              <h3>Technique without context</h3>
+              <p>Professional culinary logic depends on why, when, and under which constraints a technique is used.</p>
+            </article>
+            <article>
+              <span className="signal-index">03</span>
+              <h3>Taste without language</h3>
+              <p>Sensory decisions need richer vocabularies, confidence, and evidence—not vague claims of machine creativity.</p>
+            </article>
+          </div>
+        </section>
 
-    const targets:{x:number;y:number}[]=[];
-    function rasterize(){
-      const off=document.createElement("canvas"); const o=off.getContext("2d")!;
-      const pad=40; off.width=Math.min(1200,w-pad*2); off.height=240;
-      o.fillStyle="#000"; o.fillRect(0,0,off.width,off.height);
-      o.fillStyle="#fff"; const fs=Math.max(64,Math.min(180,Math.floor(w*0.12)));
-      o.font=`800 ${fs}px ui-sans-serif,system-ui,Inter,Arial`; o.textAlign="center"; o.textBaseline="middle";
-      o.fillText("CulinArch.AI", off.width/2, off.height/2);
-      const img=o.getImageData(0,0,off.width,off.height).data; const step=8;
-      const left=(w-off.width)/2, top=(h-off.height)/2; targets.length=0;
-      for(let y=0;y<off.height;y+=step){
-        for(let x=0;x<off.width;x+=step){
-          const a=(y*off.width+x)*4+3; if(img[a]>10) targets.push({x:left+x,y:top+y});
-        }
-      }
-    }
-    rasterize();
+        <section className="section architecture-section" id="architecture" aria-labelledby="architecture-title">
+          <div className="site-shell section-heading-row">
+            <div>
+              <p className="eyebrow">Working architecture</p>
+              <h2 id="architecture-title">Four areas. One connected system.</h2>
+            </div>
+            <p>
+              The model below is a public working structure. Definitions and maturity
+              states will evolve as research, product boundaries, and evidence become clearer.
+            </p>
+          </div>
 
-    function spawn(n=Math.max(40,Math.min(140,Math.floor(w/8)))){
-      for(let i=0;i<n;i++){
-        dots.push({ x:rnd(0,w), y:rnd(-h*0.25,0), vy:rnd(1.2,3.2), txt: Math.random()>0.5?"1":"0" });
-      }
-    }
-    function assignTargets(){
-      while(targets.length<dots.length) targets.push(targets[Math.floor(Math.random()*targets.length)]);
-      const shuffled=[...targets].sort(()=>Math.random()-0.5);
-      dots.forEach((d,i)=>{ d.tx=shuffled[i].x; d.ty=shuffled[i].y; d.stuck=false; });
-    }
-    const human = BIN.split(" ").map(b=>String.fromCharCode(parseInt(b,2))).join("");
+          <div className="site-shell architecture-map">
+            <div className="architecture-foundation">
+              <div>
+                <span className="architecture-code">01 / Foundation</span>
+                <h3>ArcOS</h3>
+              </div>
+              <p>Structures the shared language, records, workflows, and rules beneath the platform.</p>
+              <StatusPill>Working architecture</StatusPill>
+            </div>
 
-    function frame(){
-      t++; ctx.clearRect(0,0,w,h);
-      ctx.fillStyle="#0b0d0f"; ctx.fillRect(0,0,w,h);
+            <div className="architecture-connector" aria-hidden="true">
+              <span />
+            </div>
 
-      // grid
-      ctx.strokeStyle="rgba(255,255,255,.04)"; ctx.lineWidth=1;
-      for(let x=0;x<w;x+=24){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
-      for(let y=0;y<h;y+=24){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+            <div className="architecture-network">
+              {architectureAreas.slice(1).map((area) => (
+                <article key={area.name} className={area.name === "Culinary Intelligence" ? "architecture-node architecture-node-primary" : "architecture-node"}>
+                  <div className="architecture-node-meta">
+                    <span>{area.code}</span>
+                    <StatusPill>{area.status}</StatusPill>
+                  </div>
+                  <p className="architecture-type">{area.type}</p>
+                  <h3>{area.name}</h3>
+                  <p>{area.description}</p>
+                </article>
+              ))}
+            </div>
 
-      if(phase==="RAIN") spawn();
+            <p className="architecture-note">
+              Culinary Archaeology and ArchSense enrich the analytical layer with cultural,
+              historical, and sensory context. They are not decorative sub-brands or equal product cards.
+            </p>
+          </div>
+        </section>
 
-      ctx.fillStyle="#8ae9ff"; ctx.font="12px ui-monospace, Menlo, Consolas"; ctx.textAlign="center"; ctx.textBaseline="middle";
-      let settled=0;
-      dots.forEach(d=>{
-        if(phase==="RAIN"){
-          if(!d.stuck){ d.y+=d.vy; if(isSolid(d.x,d.y)){ d.stuck=true; setCell(d.x,d.y,true);} }
-          else settled++;
-        } else {
-          if(d.tx==null||d.ty==null) return;
-          const dx=d.tx-d.x, dy=d.ty-d.y, dist=Math.hypot(dx,dy)||1;
-          const speed = phase==="GATHER" ? 0.12 : 0.2;
-          d.x += dx*speed; d.y += dy*speed;
-          if(dist<1.2){ d.x=d.tx; d.y=d.ty; }
-        }
-        ctx.save(); ctx.shadowColor="rgba(128,245,255,.7)"; ctx.shadowBlur = phase==="RAIN"?6:12;
-        ctx.fillText(d.txt, d.x, d.y); ctx.restore();
-      });
+        <section className="section capability-section" aria-labelledby="capability-title">
+          <div className="site-shell split-layout">
+            <div>
+              <p className="eyebrow">Capability direction</p>
+              <h2 id="capability-title">From isolated records to explainable relationships.</h2>
+            </div>
+            <div className="prose-stack">
+              <p>
+                The long-term platform is intended to support research, comparison,
+                classification, provenance, sensory mapping, and professional decision support.
+              </p>
+              <p className="muted-copy">
+                These are capability directions—not a claim that every function is publicly available today.
+              </p>
+            </div>
+          </div>
 
-      ctx.fillStyle="rgba(200,208,216,.75)"; ctx.font="13px ui-monospace, Menlo, Consolas";
-      ctx.textAlign="left"; ctx.fillText(human, 18, h-20);
+          <div className="site-shell capability-list">
+            {["Structured culinary records", "Technique and transformation mapping", "Ingredient relationship analysis", "Historical and cultural provenance", "Sensory vocabulary and contrast", "Future expert decision support"].map((item, index) => (
+              <div key={item} className="capability-row">
+                <span>{String(index + 1).padStart(2, "0")}</span>
+                <h3>{item}</h3>
+                <StatusPill>{index < 2 ? "Foundational research" : "Future capability"}</StatusPill>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      if(phase==="RAIN" && (t>220 || settled>400)){ phase="GATHER"; assignTargets(); }
-      else if(phase==="GATHER" && t%90===0){ phase="MORPH"; }
+        <section className="section evidence-section" aria-labelledby="evidence-title">
+          <div className="site-shell evidence-layout">
+            <div className="evidence-intro">
+              <p className="eyebrow">Evidence model</p>
+              <h2 id="evidence-title">Research before claims.</h2>
+              <p>
+                Authority should come from transparent methods, sources, limitations,
+                versioned records, and real expert review—not from scale language or visual spectacle.
+              </p>
+            </div>
+            <div className="evidence-grid">
+              <article>
+                <span className="evidence-label">Methodology</span>
+                <h3>Explain how the system knows.</h3>
+                <p>Define source hierarchy, taxonomy governance, confidence, and update policy.</p>
+              </article>
+              <article>
+                <span className="evidence-label">Provenance</span>
+                <h3>Keep every record traceable.</h3>
+                <p>Attach origin, attribution, rights, transformations, and revision history.</p>
+              </article>
+              <article>
+                <span className="evidence-label">Maturity</span>
+                <h3>Separate live, research, and future.</h3>
+                <p>Make product state visible so ambition never becomes unsupported marketing.</p>
+              </article>
+            </div>
+          </div>
+        </section>
 
-      requestAnimationFrame(frame);
-    }
-    frame();
+        <section className="section research-section" id="research" aria-labelledby="research-title">
+          <div className="site-shell section-heading-row">
+            <div>
+              <p className="eyebrow">Research programme</p>
+              <h2 id="research-title">Initial publication themes.</h2>
+            </div>
+            <p>
+              The public research layer will be developed as a durable, sourced record—not a continuous food-media feed.
+            </p>
+          </div>
 
-    const onResize=()=>{ w=window.innerWidth; h=window.innerHeight; canvas.width=w*DPR; canvas.height=h*DPR; ctx.scale(DPR,DPR); rasterize(); };
-    window.addEventListener("resize", onResize);
-    return ()=> window.removeEventListener("resize", onResize);
-  },[]);
+          <div className="site-shell research-grid">
+            {researchThemes.map((item, index) => (
+              <article key={item.title}>
+                <div className="research-meta">
+                  <span>{item.kind}</span>
+                  <span>{item.state}</span>
+                </div>
+                <span className="research-number">0{index + 1}</span>
+                <h3>{item.title}</h3>
+                <p>{item.summary}</p>
+              </article>
+            ))}
+          </div>
+        </section>
 
-  return <div style={{height:"100dvh",background:"#0b0d0f"}}>
-    <canvas ref={ref} style={{display:"block",width:"100%",height:"100%"}}/>
-    <style jsx global>{`::selection { background:#1f2933; color:#8ae9ff; }`}</style>
-  </div>;
+        <section className="section roadmap-section" id="roadmap" aria-labelledby="roadmap-title">
+          <div className="site-shell split-layout">
+            <div>
+              <p className="eyebrow">Development posture</p>
+              <h2 id="roadmap-title">A platform built in visible phases.</h2>
+            </div>
+            <p className="roadmap-intro">
+              Public language should remain aligned with actual evidence. Dates and access commitments will only be added when dependencies are understood.
+            </p>
+          </div>
+
+          <div className="site-shell roadmap-grid">
+            {roadmap.map((phase) => (
+              <article key={phase.label}>
+                <span className="roadmap-label">{phase.label}</span>
+                <h3>{phase.title}</h3>
+                <ul>
+                  {phase.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="partnership-section" id="partnerships" aria-labelledby="partnership-title">
+          <div className="site-shell partnership-inner">
+            <div>
+              <p className="eyebrow eyebrow-light">Partnerships</p>
+              <h2 id="partnership-title">For serious culinary, research, and institutional conversations.</h2>
+            </div>
+            <div>
+              <p>
+                CulinArchAI is currently defining its architecture, evidence standards,
+                and first public research layer. Partnership pathways will remain selective and specific.
+              </p>
+              <a className="button button-light" href="mailto:hello@culinarch.ai">
+                Start a conversation
+              </a>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="site-footer">
+        <div className="site-shell footer-grid">
+          <div>
+            <a className="brand footer-brand" href="#top" aria-label="CulinArchAI home">
+              <span className="brand-mark" aria-hidden="true">C</span>
+              <span className="brand-name">CulinArchAI</span>
+            </a>
+            <p>A system. A structure. A new language of taste.</p>
+          </div>
+          <div className="footer-links">
+            <a href="#platform">Platform</a>
+            <a href="#architecture">Architecture</a>
+            <a href="#research">Research</a>
+            <a href="#roadmap">Roadmap</a>
+          </div>
+          <p className="footer-note">
+            Working public foundation. Capability definitions, evidence, and access are still under development.
+          </p>
+        </div>
+      </footer>
+    </>
+  );
 }
