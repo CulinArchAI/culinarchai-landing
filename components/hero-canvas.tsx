@@ -19,7 +19,6 @@ const COLORS = {
   grid: "rgba(235, 232, 220, 0.08)",
   text: "rgba(252, 251, 247, 0.88)",
   muted: "rgba(252, 251, 247, 0.42)",
-  accent: "#c57c54",
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -58,11 +57,15 @@ export function HeroCanvas() {
       offscreen.height = Math.max(220, Math.floor(height));
 
       const fontSize = clamp(width * 0.115, 44, 84);
+      const sansFamily = getComputedStyle(document.documentElement)
+        .getPropertyValue("--font-sans")
+        .trim();
+
       offscreenContext.clearRect(0, 0, offscreen.width, offscreen.height);
       offscreenContext.fillStyle = "#ffffff";
       offscreenContext.textAlign = "center";
       offscreenContext.textBaseline = "middle";
-      offscreenContext.font = `650 ${fontSize}px Manrope, Arial, sans-serif`;
+      offscreenContext.font = `650 ${fontSize}px ${sansFamily || "Arial, sans-serif"}`;
       offscreenContext.fillText("CulinArchAI", offscreen.width / 2, offscreen.height / 2);
 
       const image = offscreenContext.getImageData(
@@ -115,18 +118,6 @@ export function HeroCanvas() {
       });
     };
 
-    const resize = () => {
-      const bounds = canvas.getBoundingClientRect();
-      width = Math.max(1, Math.floor(bounds.width));
-      height = Math.max(1, Math.floor(bounds.height));
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = Math.floor(width * dpr);
-      canvas.height = Math.floor(height * dpr);
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      createParticles();
-      startTime = performance.now();
-    };
-
     const drawGrid = () => {
       const spacing = width < 520 ? 28 : 34;
       context.strokeStyle = COLORS.grid;
@@ -149,23 +140,38 @@ export function HeroCanvas() {
 
     const drawStaticIdentity = () => {
       const fontSize = clamp(width * 0.115, 44, 84);
+      const sansFamily = getComputedStyle(document.documentElement)
+        .getPropertyValue("--font-sans")
+        .trim();
+
       context.fillStyle = COLORS.text;
       context.textAlign = "center";
       context.textBaseline = "middle";
-      context.font = `650 ${fontSize}px Manrope, Arial, sans-serif`;
+      context.font = `650 ${fontSize}px ${sansFamily || "Arial, sans-serif"}`;
       context.fillText("CulinArchAI", width / 2, height / 2);
     };
 
-    const draw = (timestamp: number) => {
-      const elapsed = timestamp - startTime;
+    const drawBackground = () => {
       context.clearRect(0, 0, width, height);
-
       const gradient = context.createLinearGradient(0, 0, width, height);
       gradient.addColorStop(0, COLORS.panel);
       gradient.addColorStop(1, COLORS.panelDeep);
       context.fillStyle = gradient;
       context.fillRect(0, 0, width, height);
       drawGrid();
+    };
+
+    const drawFooterLabel = () => {
+      context.fillStyle = COLORS.muted;
+      context.textAlign = "left";
+      context.textBaseline = "alphabetic";
+      context.font = `${width < 520 ? 9 : 10}px ui-monospace, monospace`;
+      context.fillText("SIGNAL / STRUCTURE / TASTE", 18, height - 18);
+    };
+
+    const draw = (timestamp: number) => {
+      const elapsed = timestamp - startTime;
+      drawBackground();
 
       if (reducedMotion) {
         drawStaticIdentity();
@@ -174,7 +180,7 @@ export function HeroCanvas() {
 
         context.textAlign = "center";
         context.textBaseline = "middle";
-        context.font = `${width < 520 ? 9 : 10}px IBM Plex Mono, monospace`;
+        context.font = `${width < 520 ? 9 : 10}px ui-monospace, monospace`;
 
         particles.forEach((particle) => {
           const localProgress = clamp(
@@ -188,8 +194,7 @@ export function HeroCanvas() {
           particle.x = particle.originX + (particle.targetX - particle.originX) * eased;
           particle.y = particle.originY + (particle.targetY - particle.originY) * eased + drift;
 
-          context.fillStyle =
-            localProgress > 0.92 ? COLORS.text : COLORS.muted;
+          context.fillStyle = localProgress > 0.92 ? COLORS.text : COLORS.muted;
           context.fillText(particle.glyph, particle.x, particle.y);
         });
 
@@ -204,34 +209,58 @@ export function HeroCanvas() {
         }
       }
 
-      context.fillStyle = COLORS.muted;
-      context.textAlign = "left";
-      context.textBaseline = "alphabetic";
-      context.font = `${width < 520 ? 9 : 10}px IBM Plex Mono, monospace`;
-      context.fillText("SIGNAL / STRUCTURE / TASTE", 18, height - 18);
+      drawFooterLabel();
 
-      animationFrame = window.requestAnimationFrame(draw);
+      if (!reducedMotion && elapsed < 3600) {
+        animationFrame = window.requestAnimationFrame(draw);
+      } else {
+        animationFrame = 0;
+      }
+    };
+
+    const requestDraw = () => {
+      if (!animationFrame) {
+        animationFrame = window.requestAnimationFrame(draw);
+      }
+    };
+
+    const resize = () => {
+      const bounds = canvas.getBoundingClientRect();
+      width = Math.max(1, Math.floor(bounds.width));
+      height = Math.max(1, Math.floor(bounds.height));
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+      createParticles();
+      startTime = performance.now();
+      requestDraw();
     };
 
     const handleMotionChange = (event: MediaQueryListEvent) => {
       reducedMotion = event.matches;
+      startTime = performance.now();
+      createParticles();
+      requestDraw();
     };
 
     const observer = new ResizeObserver(resize);
     observer.observe(canvas);
     motionQuery.addEventListener("change", handleMotionChange);
     resize();
-    animationFrame = window.requestAnimationFrame(draw);
 
     return () => {
       observer.disconnect();
       motionQuery.removeEventListener("change", handleMotionChange);
-      window.cancelAnimationFrame(animationFrame);
+      if (animationFrame) window.cancelAnimationFrame(animationFrame);
     };
   }, []);
 
   return (
-    <figure className="hero-instrument" aria-label="CulinArchAI identity forming from structured signals">
+    <figure
+      className="hero-instrument"
+      aria-label="CulinArchAI identity forming from structured signals"
+    >
       <canvas ref={canvasRef} aria-hidden="true" />
       <figcaption>
         <span>Working identity study</span>
